@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg[binary]
+celery
+redis
+docker
+autopep8
+autoflake
+python-multipart
