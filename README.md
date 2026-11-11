@@ -7,23 +7,25 @@ Automated Code Quality Report is a web application for submitting a Python file,
 It has three main parts:
 - React/Vite Frontend - the submission form, report view and fixed-code view.
 - FastAPI Backend - accepts uploads, stores submission records, returns report status and provides an auto-fix endpoint.
-- Background Analysis Services - PostgreSQL stores submissions and reports; Redis and Celery queue and run analysis; Docker runs Flake8 in an isolated container.
+- Background Analysis Services - PostgreSQL (stores submissions and reports), Redis and Celery (queue and run analysis) and Docker (runs Flake8 in an isolated container).
 
 The intended input is Python source code. Although the submission API accepts a `language` value, the current frontend sends `python` and the analyzer only runs Flake8 for Python.
 
 ### Main Program
 
-1. On the main page, enter a Student ID and Assignment ID, select a `.py` file and submit it.
+1. Enter a Student ID and Assignment ID on the main page. select a `.py` file and submit it.
 
-2. The frontend uploads the file and metadata to the API.
+2. select a Python file (`.py`) and submit it to the main program.
 
-3. The Application Programming Interface (API) saves a submission record with a `PENDING` status and queues a background task.
+3. The frontend uploads the file and metadata to the Application Programming Interface (API).
 
-4. The Celery worker changes the status to `PROCESSING`. It runs Flake8 in a temporary Docker container with the source mounted read-only and network access disabled.
+4. The API saves a submission record with a `PENDING` status and queues a background task.
 
-5. The frontend checks the API periodically for the result. It shows an error if analysis fails or takes too long.
+5. The Celery worker changes the status to `PROCESSING`. It runs Flake8 in a temporary Docker container with the source mounted read-only and network access disabled.
 
-6. When analysis finishes, the report page shows the original code, issue locations, diagnostic messages and the score.
+6. The frontend checks the API periodically for the result. It shows an error if analysis fails or takes too long.
+
+7. The report page shows the original code, issue locations, diagnostic messages and the score when the analysis finishes.
 
 The main flow is implemented in `App.jsx`, the API routes are in `main.py` and the background task and scoring logic are in `worker.py`.
 
@@ -35,37 +37,43 @@ The report lists each Flake8 diagnostic with its rule code, line, column, messag
 - Other Flake8 findings are categorized as Refactor and cost 3 points each.
 - The score is 100 - total penalties, rounded to two decimal places and not allowed below 0.
 
-For example, one Convention finding gives a score of 98; one Refactor finding gives 97.
+For example, one Convention finding gives a score of 98 while one Refactor finding gives 97.
 
 The current analysis uses Flake8 and does not run a security scanner. Flake8 findings are categorized as Convention or Refactor. The `Warning` and `Security` penalty values in the worker are not assigned to ordinary Flake8 findings.
 
-The current frontend always submits `python`. The API accepts a `language` field, but the worker only runs Flake8 when its value is `python`; other language values currently complete with an empty report and a score of 100. Use Python files for meaningful analysis.
+The current frontend always submits `python`. The API accepts a `language` field, but the worker only runs Flake8 when its value is `python` while other language values currently complete with an empty report and a score of 100. Use Python files for meaningful analysis.
 
 ### Auto-Fix
 
-From the results page, **Fix the Python Code** sends the original source to the backend’s auto-fix logic. It can repair some common syntax mistakes, remove unused imports and variables, and format code. The fixed source is displayed separately and can be downloaded as a `_fixed.py` file as the upload is not overwritten.
+From the results page, **Fix the Python Code** sends the original source to the backend’s auto-fix logic. It can repair some common syntax mistakes, remove unused imports and variables and format code. The fixed source is displayed separately and can be downloaded as a `_fixed.py` file as the upload is not overwritten.
 
 Auto-fix is not a general-purpose code repair tool. It cannot reliably infer what the program was intended to do or fix arbitrary logic errors. If it cannot safely repair a syntax problem, it returns an error instead.
 
 ## Project Files and Tests
 
-- `.vscode/` contains workspace settings and a FastAPI debug configuration. The workspace Python interpreter is set to `backend/.venv315/Scripts/python.exe`.
-- `backend/` contains the FastAPI API (`main.py`), database model/configuration (`database.py`), request/response schemas (`schemas.py`), Celery analysis worker and auto-fix implementation (`worker.py`), dependencies (`requirements.txt`), and Flake8 image definition (`Dockerfile.linter`). `backend/.venv315/` is the local Python environment and is generated during setup.
+- `.vscode/` folder contains workspace settings and a FastAPI debug configuration. The workspace Python interpreter is set to `backend/.venv315/Scripts/python.exe`.
+- `backend` folder contains the FastAPI API (`main.py`), database model/configuration (`database.py`), request/response schemas (`schemas.py`), Celery analysis worker and auto-fix implementation (`worker.py`), dependencies (`requirements.txt`) and Flake8 image definition (`Dockerfile.linter`). `backend/.venv315/` is the local Python environment and is generated during setup.
 - `backend/autofix.py` contains the Python `unittest` tests for the auto-fix function. Run them from the `backend` folder with:
 
 ```
 ./.venv315/Scripts/python.exe -m unittest autofix
 ```
 
-- `frontend/` contains the Vite/React application. `index.html`, `src/`, `package.json`, `package-lock.json`, and `vite.config.js` are frontend source/configuration files. `frontend/node_modules/` is generated by `npm install`; `frontend/dist/` is generated by `npm run build` and is not used by the Vite development server.
-- `test/` contains example Python files that can be submitted through the application; they are not the auto-fix unit test suite.
-- `README.md` documents the program and its setup.
+- `frontend` folder contains the Vite/React application. `index.html`, `src/`, `package.json`, `package-lock.json` and `vite.config.js` are frontend source/configuration files. `frontend/node_modules/` is generated by `npm install` while `frontend/dist/` is generated by `npm run build` and is not used by the Vite development server.
+- `test` folder contains example Python files that can be submitted through the application. They are not the auto-fix unit test suite.
 
 ## Step-By-Step Project Startup on Windows with Git Bash
 
 This program requires Docker Desktop, Python 3.15, and Node.js/npm to be installed. Start Docker Desktop first. The backend runs from `backend/.venv315` while the frontend dependencies are managed through npm.
 
-This setup runs five services/processes: PostgreSQL and Redis in Docker, a Celery analysis worker, the FastAPI backend and the React/Vite website. Keep the worker, API and frontend running in separate Visual Studio Code terminals while using the app.
+This setup runs five services/processes:
+- PostgreSQL in Docker
+- Redis in Docker
+- Celery Analysis Worker
+- FastAPI Backend
+- React/Vite Website
+
+Keep the worker, API and frontend running in separate Visual Studio Code terminals while using the app.
 
 ### Step 1: Open the Project and Select Git Bash
 
@@ -77,7 +85,7 @@ Automatic Code Quality Report
 
 2. Select **Terminal → New Terminal** in Visual Studio Code.
 
-3. If the terminal is not Git Bash, open the terminal profile menu beside the + button and select **Git Bash**.
+3. Open the terminal profile menu beside the + button and select **Git Bash** if the terminal is not Git Bash.
 
 4. Check that the commands are available:
 
@@ -88,7 +96,7 @@ npm --version
 docker --version
 ```
 
-If `py -3.15` fails, Python 3.15 may not be installed or available through the Windows Python launcher. Docker commands also require Docker Desktop to be installed and running.
+Python 3.15 may not be installed or available through the Windows Python launcher if `py -3.15` fails. Docker commands also require Docker Desktop to be installed and running.
 
 ### Step 2: Create the Python Environment and Install Backend Dependencies
 
@@ -113,7 +121,7 @@ The `./` at the start matters in Git Bash. It tells the shell to run the executa
 ./.venv315/Scripts/python.exe --version
 ```
 
-Optionally, configure Visual Studio Code to use it for Python features:
+Configure Visual Studio Code optionally to use it for Python features:
   1. Open the Command Palette with **Ctrl + Shift + P**
   2. Choose **Python: Select Interpreter**
   3. Select `backend/.venv315/Scripts/python.exe`
@@ -146,7 +154,7 @@ cd backend
 docker build -f Dockerfile.linter -t alpine-python-linter:latest .
 ```
 
-The project already includes `Dockerfile.linter`, so you do not need to create it. The linter image and the backend environment both use Python 3.15. If `Dockerfile.linter` changes, rebuild this image before analyzing files again. The worker starts a fresh container for each analysis, so restarting Celery is not required just to use the rebuilt image.
+The project already includes `Dockerfile.linter`, so you do not need to create it. The linter image and the backend environment both use Python 3.15. Rebuild the `Dockerfile.linter` image before analyzing files again if it changes. The worker starts a fresh container for each analysis, so restarting Celery is not required just to use the rebuilt image.
 
 ### Step 5: Start the Celery Worker
 
@@ -218,13 +226,13 @@ Press **Ctrl + C** in the Celery worker terminal.
 docker stop linter-postgres linter-redis
 ```
 
-2. Removing the containers is not part of normal shutdown. To remove them:
+2. Run this if you want to remove the containers:
 
 ```
 docker rm linter-postgres linter-redis
 ```
 
-The PostgreSQL image uses an anonymous data volume. Removing a container without `-v` can leave its volume behind, but the next `docker run` creates a new container with a new volume and will not automatically reconnect to the old data. To preserve and continue using the existing database, stop and start the existing container instead. Do not add `-v` when removing containers unless you intend to delete their associated volumes.
+Removing the conatiners is not part of normal shutdown because the PostgreSQL image uses an anonymous data volume. Removing a container without `-v` can leave its volume behind, but the next `docker run` creates a new container with a new volume and will not automatically reconnect to the old data. Stop and start the existing container instead to preserve and continue using the existing database. Do not add `-v` when removing containers unless you intend to delete their associated volumes.
 
 3. Run this if you want to remove the linter image:
 
@@ -238,7 +246,7 @@ docker rmi alpine-python-linter:latest
 
 1. Start Docker Desktop and wait until it reports that Docker is running.
 
-2. If the Python environment was removed, recreate it by following Step 2. If the linter image was removed or `Dockerfile.linter` changed, rebuild it by following Step 4. If backend dependencies changed, install them in `.venv315` with the Step 2 pip command and restart the API and worker.
+2. Recreate the Python environment by following Step 2 of **Step-By-Step Project Startup on Windows with Git Bash** if it was removed. Rebuild the `Dockerfile.linter` image by following Step 4 of **Step-By-Step Project Startup on Windows with Git Bash** if the linter image was removed or changed. Install the backend dependencies in `.venv315` with the `pip` command in Step 2 of **Step-By-Step Project Startup on Windows with Git Bash** if it changed and restart the API and worker.
 
 3. Start the PostgreSQL and Redis containers with this command if they still exist:
 
@@ -246,7 +254,7 @@ docker rmi alpine-python-linter:latest
 docker start linter-postgres linter-redis
 ```
 
-If you removed those containers, recreate them by running the two `docker run` commands in Step 3 instead. Starting existing containers preserves their stored database data while newly created containers start with a new database.
+Recreate the containers by running the two `docker run` commands in Step 3 of **Step-By-Step Project Startup on Windows with Git Bash** instead if the containers were removed. Starting existing containers preserves their stored database data while newly created containers start with a new database.
 
 ### Step 2: Start the Celery Worker
 
@@ -272,18 +280,18 @@ Leave this terminal open. The API is at `http://127.0.0.1:8000`. Its interactive
 
 ### Step 4: Install Frontend Packages and Start the Website
 
-If frontend dependencies are missing, first run `npm install` in the `frontend` folder as shown in Step 7. Then open another **new Visual Studio Code terminal** with **Terminal → New Terminal** and run:
+Run `npm install` first in the `frontend` folder if frontend dependencies are missing as shown in Step 7 of **Step-By-Step Project Startup on Windows with Git Bash**. Then, open another **new Visual Studio Code terminal** with **Terminal → New Terminal** and run:
 
 ```
 cd frontend
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Leave this terminal open too. The website should be available at `http://127.0.0.1:5173/`. Open `http://127.0.0.1:5173/` in your browser.
+Leave this terminal open. The website should be available at `http://127.0.0.1:5173/`. Open `http://127.0.0.1:5173/` in your browser.
 
 ## Git Bash Path Reminder
 
-If a command reports `command not found` for the Python executable, check that you’re in the `backend` folder and that the path begins with `./`. If you are at the project root, first run `cd backend`:
+Check that you are in the `backend` folder and that the path begins with `./` if a command reports `command not found` for the Python executable. Run `cd backend` first if you are at the project root:
 
 ```
 ./.venv315/Scripts/python.exe --version
@@ -291,7 +299,7 @@ If a command reports `command not found` for the Python executable, check that y
 
 ## Changes To The Running Programs, Its Effects & Its Solutions
 
-The effect of a code change depends on which service owns the changed file. With the project’s current startup commands, use this guide:
+The effect of a code change depends on which service owns the changed file. Use this guide to help you with the project’s current startup commands:
 
 | **Changes** | **Effects While Running** | **Solutions** |
 | --- | --- | --- |
